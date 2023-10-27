@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-
+import * as Cesium from 'cesium';
+import { RGBELoader  } from 'three/examples/jsm/loaders/RGBELoader';
+import { getThreeModelQuaternion } from './3d';
 type ThreeParams = {
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
@@ -17,18 +19,28 @@ const createCamera = (dom: HTMLDivElement) => {
 }
 
 const addLight = (scene: THREE.Scene) => {
-    const topLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    topLight.position.set(0, 5000000, 5000000);
+    const topLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    //@ts-ignore
+    topLight.position.copy(Cesium.Cartesian3.fromDegrees(120.002, 30));
+    topLight.position.z = topLight.position.z + 100
+    topLight.setRotationFromQuaternion(
+        new THREE.Quaternion(...getThreeModelQuaternion(120.002, 30))
+    );
+    const helper = new THREE.CameraHelper(topLight.shadow.camera)
+    scene.add(helper)
+    // topLight.position.set(0, 5000000, 5000000);
     topLight.castShadow = true;
-    const bottomLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    bottomLight.position.set(0, -5000000, 0);
-    bottomLight.castShadow = true;
+    // const bottomLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // bottomLight.position.set(0, -5000000, 0);
+    // bottomLight.castShadow = true;
     const pointLight = new THREE.PointLight(0xffffff, 0.3);
     pointLight.position.set(5000000, 5000000, 5000000);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 10)
 
     scene.add(topLight);
-    scene.add(bottomLight);
+    // scene.add(bottomLight);
     scene.add(pointLight);
+    scene.add(ambientLight);
 }
 
 const createScene = () => {
@@ -46,10 +58,22 @@ const createRenderer = (dom: HTMLDivElement) => {
     return renderer;
 }
 
+const addHDRI = (scene: THREE.Scene) => {
+    new RGBELoader()
+    .load('hdri/main.hdr', texture => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        
+        // scene.background = texture
+        scene.environment = texture
+        // scene.rotation.y = Math.PI
+    })
+}
+
 const threeInit = (dom: HTMLDivElement) => {
     const camera = createCamera(dom);
     const renderer = createRenderer(dom);
     const scene = createScene();
+    addHDRI(scene);
 
     // add stuff
     addLight(scene);

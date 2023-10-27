@@ -4,7 +4,9 @@ import cesiumInit, { CesiumParams } from '@/src/utils/cesiumInit';
 import styles from './index.module.sass';
 import * as Cesium from 'cesium';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { flyMeToTheMoon, getThreeModelQuaternion } from '../utils/3d';
+import { modelType, models } from '@/src/data/models';
 
 type Twins = {
 	three: ThreeParams;
@@ -16,7 +18,7 @@ const Home = () => {
 	const threeRef = useRef<HTMLDivElement>(null);
 	const [twins, setTwins] = useState<Twins>();
 	const lastSelectedMesh = useRef<THREE.Mesh>();
-
+	const myModels: modelType[] = models
 	// init scenes & add events
 	useEffect(() => {
 		const threeDom = threeRef.current;
@@ -142,11 +144,11 @@ const Home = () => {
 		resize();
 		animate();
 		window.addEventListener('resize', resize);
-		cesiumDom.addEventListener('mousemove', onMouseMove);
+		// cesiumDom.addEventListener('mousemove', onMouseMove);
 
 		return () => {
 			window.removeEventListener('resize', resize);
-			cesiumDom.removeEventListener('mousemove', onMouseMove);
+			// cesiumDom.removeEventListener('mousemove', onMouseMove);
 			clickHandler.destroy();
 			cancelAnimationFrame(idAnimateFrame);
 		}
@@ -155,6 +157,18 @@ const Home = () => {
 	// add meshes/entities
 	useEffect(() => {
 		if (!twins) return;
+
+		myModels.forEach( model => {
+			const loader = new GLTFLoader()
+			loader.load(model.url, (gltf) => {
+				//@ts-ignore
+				gltf.scene.position.copy(Cesium.Cartesian3.fromDegrees(100, 20))
+				gltf.scene.setRotationFromQuaternion(
+					new THREE.Quaternion(...getThreeModelQuaternion(120, 30))
+				);
+				twins.three.scene.add(gltf.scene);
+			});
+		})
 
 		// add cube
 		const cubeGeo = new THREE.BoxGeometry(6, 6, 6);
