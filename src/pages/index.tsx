@@ -32,6 +32,7 @@ const Home = () => {
 			camera: threeCamera,
 			renderer: threeRenderer,
 			scene: threeScene,
+			lights: threeLights
 		} = three;
 
 		const { viewer: cesiumViewer } = cesium;
@@ -162,11 +163,18 @@ const Home = () => {
 			const loader = new GLTFLoader()
 			loader.load(model.url, (gltf) => {
 				//@ts-ignore
-				gltf.scene.position.copy(Cesium.Cartesian3.fromDegrees(100, 20))
+				gltf.scene.position.copy(Cesium.Cartesian3.fromDegrees(120, 30))
 				gltf.scene.setRotationFromQuaternion(
 					new THREE.Quaternion(...getThreeModelQuaternion(120, 30))
 				);
+				gltf.scene.traverse(function (child) {
+					if ((child as THREE.Mesh).isMesh) {
+						child.castShadow = true
+						child.receiveShadow = true
+					}
+				})
 				twins.three.scene.add(gltf.scene);
+				twins.three.lights.target = gltf.scene
 			});
 		})
 
